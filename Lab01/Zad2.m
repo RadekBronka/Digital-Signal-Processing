@@ -1,53 +1,59 @@
-clc; clear; close all;
+clear all;
+close all;
+clearvars;
+clc;
 
-%% Parametry sygnału
-A = 230;      
-f = 50;      
-fs_analog = 10000; 
-fs_sampled = 200; 
-T = 0.1;      % Czas trwania [s]
+% Parametry sygnału z zadania 1A
+A = 230;
+f = 50;
+T = 0.1;
+
+% Częstotliwości próbkowania
+fs1 = 10000;  
+fs3 = 200;    
 
 
-t_analog = 0:1/fs_analog:T;
-x_analog = A * sin(2 * pi * f * t_analog);
+t1 = 0:1/fs1:T;  
+t3 = 0:1/fs3:T;   %punkty probek dla fs=200Hz
+ts = 0:1/fs1:T;   %zmienilem z 0:0.02:T, poniewaz wtedy wychodzily kanciaste wykresy zamiast sinusa, teraz jest sinus
 
+% Sygnał pseudo analog
+y_analog = A * sin(2 * pi * f * ts);
+% Sygnał próbkowany 200Hz
+y3 = A * sin(2 * pi * f * t3);
 
-t_sampled = 0:1/fs_sampled:T;
-x_sampled = A * sin(2 * pi * f * t_sampled);
+%Kod z pdf
+xhat = zeros(size(ts));
 
-%rekonstrukcja
-t_reconstruct = t_analog;  % mialo byc w chw
-x_reconstruct = zeros(size(t_reconstruct));
-
-% Rekonstrukcja metodą sinc()
-for idx = 1:length(t_reconstruct)
-    t = t_reconstruct(idx);
-    x_reconstruct(idx) = 0;
-    for n = 1:length(t_sampled)  % Sumujemy po próbkach
-        T_s = 1/fs_sampled;  % Okres próbkowania
-        x_reconstruct(idx) = x_reconstruct(idx) + x_sampled(n) * sinc((t - t_sampled(n)) / T_s);
+for idx = 1:length(ts)
+    t = ts(idx);
+    xhat(idx) = 0; 
+    for n = -3:3  % Zakres sinc
+        sample_idx = round((t * fs3)) + n; 
+        if sample_idx >= 1 && sample_idx <= length(y3) 
+            %T=1/fs3, nT=t3(sample_idx)
+            xhat(idx) = xhat(idx) + y3(sample_idx) * sinc(fs3 * (t - t3(sample_idx)));
+        end
     end
 end
 
-%% Wykresy
+
+
+
 figure;
-hold on;
-plot(t_analog, x_analog, 'b', 'DisplayName', 'Pseudo-analogowy (fs = 10 kHz)');
-stem(t_sampled, x_sampled, 'r', 'DisplayName', 'Spróbkowany (fs = 200 Hz)', 'MarkerSize', 5);
-plot(t_reconstruct, x_reconstruct, 'g', 'DisplayName', 'Zrekonstruowany (sinc)', 'LineWidth', 1.2);
+plot(ts, y_analog, 'r', 'LineWidth', 1.5); hold on; 
+plot(ts, xhat, 'b--', 'LineWidth', 1);  
+legend('Sygnał pseudo-analogowy', 'Zrekonstruowany');
 xlabel('Czas [s]');
-ylabel('Amplituda [V]');
-title('Rekonstrukcja sygnału za pomocą sinc()');
-legend;
+ylabel('Amplituda');
 grid on;
-hold off;
 
-%% Obliczenie błędu rekonstrukcji
-error_signal = x_analog - x_reconstruct;
+% Błąd rekonstrukcji
+error_signal = y_analog - xhat;
 
 figure;
-plot(t_analog, error_signal, 'k');
+plot(ts, error_signal, 'k', 'LineWidth', 1);
 xlabel('Czas [s]');
-ylabel('Błąd rekonstrukcji [V]');
-title('Błąd rekonstrukcji');
+ylabel('Błąd rekonstrukcji');
+title('Błąd rekonstrukcji sygnału (ograniczona suma sinc)');
 grid on;
