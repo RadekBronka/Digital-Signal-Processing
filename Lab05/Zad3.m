@@ -1,8 +1,8 @@
 % Parametry
-fp = 64e3;      % Hz
-fs = 128e3;     % Hz
+fp = 64e3;      % Hz f graniczna
+fs = 256e3;     % Hz f probkowania
 wp = 2*pi*fp;   % rad/s
-ws = 2*pi*fs;   % rad/s
+ws = 2*pi*fs/2;   % rad/s
 Rp = 3;         % maksymalne zafalowanie (dB)
 Rs = 40;        % minimalne tłumienie (dB)
 
