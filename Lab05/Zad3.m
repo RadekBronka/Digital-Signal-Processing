@@ -14,7 +14,7 @@ orders = zeros(1,4);
 for i = 1:4
     switch types{i}
         case 'butter'
-            [n, wn] = buttord(wp, ws, Rp, Rs, 's');
+            [n, wn] = buttord(wp, ws, Rp, Rs, 's'); % n- rzad filtru, wn czestotliwosc graniczna
             [b, a] = butter(n, wn, 's');
         case 'cheby1'
             [n, wn] = cheb1ord(wp, ws, Rp, Rs, 's');
