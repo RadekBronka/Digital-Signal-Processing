@@ -11,7 +11,7 @@ load('lab08_am.mat');     % wczytanie zarejestrowanego sygnału AM z pliku (zgod
 
 %% Projektowanie filtru Hilberta (FIR)
 N = 201;                   % długość filtru (nieparzysta liczba próbek, typowe dla filtru FIR)
-n = -(N-1)/2:(N-1)/2;     % oś próbkowania odpowiedzi impulsowej
+n = -(N-1)/2:(N-1)/2;     % oś próbkowania odpowiedzi impulsowej (indeksy próbek)
 
 % Tworzenie idealnej odpowiedzi impulsowej filtru Hilberta
 h_ideal = (1./(pi*n)).*(1 - cos(pi*n));  % h[n] = 1/(pi*n) * (1 - cos(pi*n))
@@ -23,10 +23,10 @@ h = h_ideal .* hamming(N)';
 % Filtracja sygnału x przez filtr Hilberta
 delay = (N-1)/2;           % obliczenie opóźnienia filtru FIR
 y = filter(h,1,x);         % filtracja sygnału
-x_ht = [y(delay+1:end), zeros(1,delay)]; % kompensacja opóźnienia (zgodnie z podręcznikiem TZ, str. 353)
+x_ht = [y(delay+1:end), zeros(1,delay)]; % kompensacja opóźnienia
 
 %% Obliczenie obwiedni sygnału
-env = sqrt(x.^2 + x_ht.^2);  % Obwiednia sygnału AM: sqrt(x^2 + HT(x)^2) = |sygnał analityczny|
+env = sqrt(x.^2 + x_ht.^2);  % Obwiednia sygnału AM: sqrt(x^2 + HT(x)^2) ze wzoru
 
 %% Wykresy sygnałów w dziedzinie czasu
 % Sekcja wizualizacyjna: prezentacja sygnału x(t), jego transformaty Hilberta oraz obwiedni m(t)
@@ -49,7 +49,7 @@ xlabel('Czas [s]'); ylabel('Amplituda');
 %% Wykres widma obwiedni
 % Analiza częstotliwościowa obwiedni m(t)
 L = length(env);
-Env_fft = fft(env);                   % FFT obwiedni
+Env_fft = fft(env);                   % FFT obwiedni (fast fourier)
 mag = abs(Env_fft)/L;                % Normalizacja widma amplitudowego
 fv_full = (0:L-1)*(fs/L);            % Oś częstotliwości
 half = ceil(L/2);                    % Połowa widma (z uwagi na symetrię dla sygnałów rzeczywistych)
@@ -60,9 +60,7 @@ xlabel('Częstotliwość [Hz]'); ylabel('Amplituda');
 
 %% FFT obwiedni i ekstrakcja parametrów m(t)
 % Znalezienie dominujących składowych częstotliwościowych m(t)
-L = length(env);
-Env_fft = fft(env);
-mag = abs(Env_fft)/L;
+
 fv = (0:L-1)*(fs/L);
 half = ceil(L/2);
 mag_half = mag(2:half);      % pomijamy DC (pierwszy element)
