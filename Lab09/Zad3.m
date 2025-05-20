@@ -138,3 +138,62 @@ end
 figure(gcf);  % aktywuj ostatnią figurę
 hold on;
 xline(lock_time_mod, 'r--', 'Moment dostrojenia');
+
+
+%% 3. Sprawdzenie szybkości zbieżności przy różnych poziomach SNR
+snr_values = [0, 5, 10, 20];  % poziomy SNR w dB
+
+for snr_idx = 1:length(snr_values)
+    snr_db = snr_values(snr_idx);
+    
+    % Dodanie szumu AWGN do czystego sygnału pilota
+    p_noisy = awgn(p, snr_db, 'measured');
+    
+    % Inicjalizacja PLL
+    freq = 2*pi*fpilot/fs;
+    theta = zeros(1, length(p_noisy)+1);
+    alpha = 1e-3;
+    beta = alpha^2/4;
+
+    % PLL loop
+    for n = 1:length(p_noisy)
+        perr = -p_noisy(n)*sin(theta(n));
+        theta(n+1) = theta(n) + freq + alpha*perr;
+        freq = freq + beta*perr;
+    end
+
+    % Estymowana faza i błąd fazy
+    estimated_phase = theta(1:end-1);
+    phase_error = wrapToPi(true_phase - estimated_phase);
+
+    % Wykrywanie momentu dostrojenia
+    lock_sample = NaN;
+    for n = 1:(length(phase_error) - stable_samples)
+        window = abs(phase_error(n:n + stable_samples - 1));
+        if all(window < threshold)
+            lock_sample = n;
+            lock_time = t(lock_sample);
+            break;
+        end
+    end
+
+    % Wyświetlenie informacji o czasie dostrojenia
+    if ~isnan(lock_sample)
+        fprintf('PLL przy SNR = %d dB dostroiło się po %.4f s (%d próbek).\n', ...
+                snr_db, lock_time, lock_sample);
+    else
+        fprintf('PLL przy SNR = %d dB NIE zdążyło się dostroić w analizowanym czasie.\n', snr_db);
+    end
+
+    % Wykres błędu fazy
+    figure;
+    plot(t, phase_error);
+    xlabel('Czas [s]');
+    ylabel('Błąd fazy [rad]');
+    title(sprintf('Błąd fazy PLL dla SNR = %d dB', snr_db));
+    grid on;
+    if ~isnan(lock_sample)
+        hold on;
+        xline(lock_time, 'r--', 'Moment dostrojenia');
+    end
+end
