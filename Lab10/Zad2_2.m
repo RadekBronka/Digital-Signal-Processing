@@ -35,7 +35,11 @@ searchRange = 80;
 pitch_period = rel_lag + (startLag - 1);
 
 % Obliczenie sygnału resztkowego
-residual = filter(a, 1, yw);
+% Transmitancja H(z) = 1 / A(z), więc odwrotna to A(z) / 1
+b_inv = 1;       % licznik odwrotnego filtru
+a_inv = a;       % mianownik odwrotnego filtru (czyli A(z))
+
+residual = filter(a_inv, b_inv, yw); % przefiltrowanie odwrotnym filtrem
 
 % --- Pobudzenie 1 okres ---
 one_period = residual(1:pitch_period);
