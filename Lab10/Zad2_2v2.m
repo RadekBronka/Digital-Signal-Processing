@@ -43,35 +43,38 @@ residual = filter(a_inv, b_inv, yw); % przefiltrowanie odwrotnym filtrem
 
 % --- Pobudzenie 1 okres ---
 one_period = residual(1:pitch_period);
-e1 = zeros(N, 1);
-for i = 0:floor(N/pitch_period)-1
-    idx = i * pitch_period + 1;
-    if idx + pitch_period - 1 <= N
-        e1(idx:idx+pitch_period-1) = one_period;
-    end
-end
-gain1 = sqrt(sum(yw.^2)/sum(e1.^2));
-e1 = gain1 * e1;
-y_syn1 = filter(1, a, e1);
+% Powtarzamy okres tyle razy, by pokryć długość N
+num_repeats = ceil(N / pitch_period);
+e1 = repmat(one_period, num_repeats, 1); %kopiowanie macierzy iles razy
 
+% Przycinamy do dokładnie długości N
+e1 = e1(1:N);
+
+% Dopasowanie wzmocnienia
+gain1 = sqrt(sum(yw.^2) / sum(e1.^2));
+e1 = gain1 * e1;
+
+% Synteza
+y_syn1 = filter(1, a, e1);
 % --- Pobudzenie średni sygnał z kilku okresów ---
 num_periods = 5;
 if pitch_period * num_periods <= length(residual)
     periods_matrix = reshape(residual(1:(pitch_period*num_periods)), pitch_period, num_periods);
-    avg_residual = mean(periods_matrix, 2);
+    avg_residual = mean(periods_matrix, 2); %srednia po kolumnach
 else
     avg_residual = one_period;
 end
 
-e2 = zeros(N, 1);
-for i = 0:floor(N/pitch_period)-1
-    idx = i * pitch_period + 1;
-    if idx + pitch_period - 1 <= N
-        e2(idx:idx+pitch_period-1) = avg_residual;
-    end
-end
-gain2 = sqrt(sum(yw.^2)/sum(e2.^2));
+% Powtórz średni okres tyle razy, żeby pokryć długość N
+num_repeats = ceil(N / pitch_period);
+e2 = repmat(avg_residual, num_repeats, 1);
+e2 = e2(1:N);
+
+% Dopasowanie wzmocnienia
+gain2 = sqrt(sum(yw.^2) / sum(e2.^2));
 e2 = gain2 * e2;
+
+% Synteza
 y_syn2 = filter(1, a, e2);
 
 figure;
