@@ -3,6 +3,7 @@ clear; close all; clc;
 % === PARAMETRY ===
 fs_target = 8000;
 N = 100; % długość ramki (20 ms)
+f0=200;
 
 % === Wczytanie pliku dźwięcznego (głoska dźwięczna) ===
 file = 'dzwiecznadluga2.wav';
@@ -10,6 +11,10 @@ file = 'dzwiecznadluga2.wav';
 y = resample(y, fs_target, fs);
 y = y(:);
 y = y(1:N);
+
+% === Generowanie sygnału sinusoidalnego ===
+%t = (0:N-1)'/fs_target;  % wektor czasu
+%y = sin(2*pi*f0*t)
 
 % Preemfaza i okno Hamminga
 preemph = [1 -0.95];
