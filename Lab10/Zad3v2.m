@@ -114,7 +114,25 @@ plot(pitch_periods);
 title('Okres tonu podstawowego (tylko informacyjnie)');
 ylabel('Pitch period [próbki]');
 xlabel('Numer ramki');
+% === Porównanie widma oryginału i po syntezie LPC + residual/szum ===
+segment_len = fs_target * 1;  % 1 sekunda sygnału
+y_orig_seg = y(1:segment_len);
+y_syn_seg = y_syn_all(1:segment_len);
 
+NFFT = 2^nextpow2(segment_len);
+Y_orig = fft(y_orig_seg, NFFT);
+Y_syn = fft(y_syn_seg, NFFT);
+
+f = fs_target/2 * linspace(0,1,NFFT/2+1);
+
+figure('Name','Porównanie widm sygnałów');
+plot(f, 20*log10(abs(Y_orig(1:NFFT/2+1)) + eps), 'b', 'LineWidth', 1.5); hold on;
+plot(f, 20*log10(abs(Y_syn(1:NFFT/2+1)) + eps), 'r--', 'LineWidth', 1.5);
+grid on;
+xlabel('Częstotliwość [Hz]');
+ylabel('Amplituda [dB]');
+title('Widmo sygnału oryginalnego (niebieski) i po syntezie LPC (czerwony)');
+legend('Oryginał', 'Synteza LPC + residual/szum');
 % === Odsłuch ===
 fprintf('\n=== Odtwarzanie: %s ===\n', file);
 
