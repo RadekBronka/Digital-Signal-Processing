@@ -1,0 +1,70 @@
+clc;
+clear;
+
+%% Parametry
+name = 'Radek';
+f_c = 500;           % czestotliwosc nosnej
+f_pr = 16000;        % czestotliwosc probkowania
+T = 0.1;              % czas trwania symbolu [s]
+t = 0:1/f_pr:T-1/f_pr;
+
+%% Etap 1: Kodowanie
+% Zamiana znaków na bity
+bits = reshape(dec2bin(double(name),8).',1,[]);
+N_bits = length(bits);
+
+%% Etap 2: Generowanie sygnału
+signal = [];
+for k = 1:N_bits
+    if bits(k) == '0'
+        symbol = sin(2*pi*f_c*t);
+    else
+        symbol = -sin(2*pi*f_c*t);
+    end
+    signal = [signal, symbol];
+end
+
+%% Etap 3: Prezentacja
+czas_wyswietlania = 0.8;  
+samples_to_plot = floor(czas_wyswietlania * f_pr);
+
+figure;
+plot((0:samples_to_plot-1)/f_pr, signal(1:samples_to_plot));
+title(['Sygnał dla imienia "' name '" (pierwsze ' num2str(czas_wyswietlania) ' s)']);
+xlabel('Czas [s]');
+ylabel('Amplituda');
+
+%% Etap 4: Odtwarzanie (różne fs)
+fs_values = [8000, 16000, 24000, 32000, 48000];
+for fs = fs_values
+    disp(['Odtwarzam sygnał z fs = ' num2str(fs) ' Hz...']);
+    soundsc(signal, fs);
+    pause(length(signal)/f_pr + 1);
+end
+
+%% Etap 5: Demodulacja (dekoder) z funkcją corr
+recovered_bits = '';
+wzor = sin(2*pi*f_c*t);  % wzorzec nośnej (sinusoida)
+samples_per_bit = length(t); % długość jednego symbolu (ilość próbek)
+
+for k = 1:N_bits
+    % Obliczamy indeks początkowy i końcowy dla k-tego bitu
+    start_index = (k-1)*samples_per_bit + 1;
+    end_index = start_index + samples_per_bit - 1;
+    % Wycinamy fragment sygnału dla tego bitu
+    segment = signal(start_index:end_index);
+    
+    % Liczymy korelację 
+    c = corr(segment.', wzor.');
+    
+    if c > 0
+        recovered_bits = [recovered_bits '0'];
+    else
+        recovered_bits = [recovered_bits '1'];
+    end
+end
+
+
+%% Etap 6: Wynik dekodera
+recovered_chars = char(bin2dec(reshape(recovered_bits,8,[])')).';
+disp(['Odzyskane znaki: ' recovered_chars]);
